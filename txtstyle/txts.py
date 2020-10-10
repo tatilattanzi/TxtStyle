@@ -1,7 +1,6 @@
-#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 #
-# Copyright 2013 Arman Sharif
+# Copyright 2013-2020 Arman Sharif
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,17 +16,18 @@
 
 import argparse
 import errno
+import itertools
 import os
 import sys
 import time
-import itertools
 
-from txtstyle.confparser import ConfParser, ConfParserException
-from txtstyle.palette import Palette
-from txtstyle.transformer import Transformer
-from txtstyle.transformer import RegexStyle
-from txtstyle.txtsconf import *
-from txtstyle.version import VERSION
+from .confparser import ConfParser
+from .confparser import ConfParserException
+from .palette import Palette
+from .transformer import Transformer
+from .transformer import RegexStyle
+from .txtsconf import *
+from .version import VERSION
 
 VERSION_INFO="""TxtStyle version %s.
 Copyright (C) 2013 Arman Sharif.
@@ -51,12 +51,12 @@ class Txts(object):
 
     def _transform_file(self):
         try:
-            with open(self.filepath, 'r') as infile:
+            with open(self.filepath, 'r', encoding='utf-8', errors='ignore') as infile:
                 for line in infile:
                     self._style(line)
         except KeyboardInterrupt:
             pass
-        except IOError, e:
+        except IOError as e:
             if e.errno == errno.ENOENT:
                 sys.stderr.write("File not found: %s\n" % self.filepath)
             elif e.errno == errno.EPIPE:
@@ -67,12 +67,14 @@ class Txts(object):
             sys.exit(e.errno)
 
     def _transform_pipe(self):
+        sys.stdin = sys.stdin.detach()
+
         try:
             while True:
                 line = sys.stdin.readline()
                 if not line:
                     break
-                self._style(line)
+                self._style(line.decode('utf-8', errors='ignore'))
         except KeyboardInterrupt:
             pass
         finally:
@@ -108,7 +110,7 @@ def parse_args():
 def get_styles(conf_parser, style_def_name):
     try:
         return conf_parser.get_styles(style_def_name)
-    except ConfParserException, e:
+    except ConfParserException as e:
         sys.stderr.write("%s\n" % e)
         sys.exit(1)
 
